@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Reports</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/css/bootstrap.min.css">
+</head>
+<body>
+<div class="container mt-5">
+    <h1>Reports</h1>
+    <form th:action="@{/manager/reports}" method="get" class="mb-4">
+        <div class="row">
+            <div class="col-md-5">
+                <label for="fromDate" class="form-label">From Date:</label>
+                <input type="date" class="form-control" id="fromDate" name="fromDate" th:value="${fromDate}">
+            </div>
+            <div class="col-md-5">
+                <label for="toDate" class="form-label">To Date:</label>
+                <input type="date" class="form-control" id="toDate" name="toDate" th:value="${toDate}">
+            </div>
+            <div class="col-md-2 d-flex align-items-end">
+                <button type="submit" class="btn btn-primary">Filter</button>
+            </div>
+        </div>
+    </form>
+    <h2>Sales Data</h2>
+    <div th:if="${salesData != null}">
+        <p>Total Sales: <span th:text="${salesData.get('totalSales')}">$0.00</span></p>
+        <p>Total Orders: <span th:text="${salesData.get('totalOrders')}">0</span></p>
+    </div>
+    <h2>Top Selling Products</h2>
+    <table class="table table-hover">
+        <thead>
+        <tr>
+            <th>Product</th>
+            <th>Quantity Sold</th>
+            <th>Total Sales</th>
+        </tr>
+        </thead>
+        <tbody>
+        <tr th:each="product : ${productSalesData}">
+            <td th:text="${product.get('name')}">Product Name</td>
+            <td th:text="${product.get('quantitySold')}">0</td>
+            <td th:text="${product.get('totalSales')}">$0.00</td>
+        </tr>
+        <tr th:if="${productSalesData == null || productSalesData.isEmpty()}">
+            <td colspan="3" class="text-center">No product sales data found</td>
+        </tr>
+        </tbody>
+    </table>
+    <h2>Top Selling Categories</h2>
+    <table class="table table-hover">
+        <thead>
+        <tr>
+            <th>Category</th>
+            <th>Quantity Sold</th>
+            <th>Total Sales</th>
+        </tr>
+        </thead>
+        <tbody>
+        <tr th:each="category : ${categorySalesData}">
+            <td th:text="${category.get('name')}">Category Name</td>
+            <td th:text="${category.get('quantitySold')}">0</td>
+            <td th:text="${category.get('totalSales')}">$0.00</td>
+        </tr>
+        <tr th:if="${categorySalesData == null || categorySalesData.isEmpty()}">
+            <td colspan="3" class="text-center">No category sales data found</td>
+        </tr>
+        </tbody>
+    </table>
+</div>
+<!-- Bootstrap JS and dependencies -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

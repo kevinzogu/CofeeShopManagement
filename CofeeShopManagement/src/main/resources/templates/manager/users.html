@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Barista Management</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/css/bootstrap.min.css">
+</head>
+<body>
+<div class="container mt-5">
+    <h1>Barista Management</h1>
+    <table class="table table-hover">
+        <thead>
+        <tr>
+            <th>ID</th>
+            <th>Name</th>
+            <th>Surname</th>
+            <th>Username</th>
+            <th>Email</th>
+            <th>Phone</th>
+            <th>Actions</th>
+        </tr>
+        </thead>
+        <tbody>
+        <tr th:each="barista : ${baristas}">
+            <td th:text="${barista.id}">1</td>
+            <td th:text="${barista.name}">John</td>
+            <td th:text="${barista.surname}">Doe</td>
+            <td th:text="${barista.username}">johndoe</td>
+            <td th:text="${barista.email}">john@example.com</td>
+            <td th:text="${barista.phone}">+1234567890</td>
+            <td>
+                <a href="#" class="btn btn-sm btn-outline-primary edit-btn"
+                   th:data-id="${barista.id}"
+                   th:data-name="${barista.name}"
+                   th:data-surname="${barista.surname}"
+                   th:data-username="${barista.username}"
+                   th:data-email="${barista.email}"
+                   th:data-phone="${barista.phone}"
+                   th:data-address="${barista.address}"
+                   th:data-birthdate="${barista.birthDate}"
+                   data-bs-toggle="modal" data-bs-target="#editBaristaModal">
+                    Edit
+                </a>
+                <form th:action="@{/manager/baristas/{id}/delete(id=${barista.id})}" method="post" class="d-inline">
+                    <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
+                    <button type="submit" class="btn btn-sm btn-outline-danger">Delete</button>
+                </form>
+            </td>
+        </tr>
+        <!-- Fallback if no baristas -->
+        <tr th:if="${baristas == null || baristas.isEmpty()}">
+            <td colspan="7" class="text-center">No baristas found</td>
+        </tr>
+        </tbody>
+    </table>
+    <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#createBaristaModal">Add New Barista</button>
+</div>
+
+<!-- Edit Barista Modal -->
+<div class="modal fade" id="editBaristaModal" tabindex="-1" aria-labelledby="editBaristaModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="editBaristaModalLabel">Edit Barista</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form id="editBaristaForm" th:action="@{/manager/baristas/update}" method="post">
+                    <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
+                    <input type="hidden" id="edit-id" name="id">
+
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="edit-name" class="form-label">First Name</label>
+                            <input type="text" class="form-control" id="edit-name" name="name" required>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="edit-surname" class="form-label">Last Name</label>
+                            <input type="text" class="form-control" id="edit-surname" name="surname" required>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="edit-username" class="form-label">Username</label>
+                            <input type="text" class="form-control" id="edit-username" name="username" required>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="edit-email" class="form-label">Email</label>
+                            <input type="email" class="form-control" id="edit-email" name="email" required>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="edit-phone" class="form-label">Phone</label>
+                            <input type="tel" class="form-control" id="edit-phone" name="phone" required>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="edit-birthdate" class="form-label">Birth Date</label>
+                            <input type="date" class="form-control" id="edit-birthdate" name="birthDate">
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="edit-address" class="form-label">Address</label>
+                        <textarea class="form-control" id="edit-address" name="address" rows="2" required></textarea>
+                    </div>
+                    <div class="mb-3">
+                        <label for="edit-password" class="form-label">Password</label>
+                        <input type="password" class="form-control" id="edit-password" name="password" placeholder="Leave blank to keep current password">
+                        <small class="text-muted">Leave blank to keep current password</small>
+                    </div>
+
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                        <button type="submit" class="btn btn-primary">Save Changes</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Create Barista Modal -->
+<div class="modal fade" id="createBaristaModal" tabindex="-1" aria-labelledby="createBaristaModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="createBaristaModalLabel">Add New Barista</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form th:action="@{/manager/baristas/create}" method="post">
+                    <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
+
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="name" class="form-label">First Name</label>
+                            <input type="text" class="form-control" id="name" name="name" required>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="surname" class="form-label">Last Name</label>
+                            <input type="text" class="form-control" id="surname" name="surname" required>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="username" class="form-label">Username</label>
+                            <input type="text" class="form-control" id="username" name="username" required>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="email" class="form-label">Email</label>
+                            <input type="email" class="form-control" id="email" name="email" required>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="phone" class="form-label">Phone</label>
+                            <input type="tel" class="form-control" id="phone" name="phone" required>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="birthDate" class="form-label">Birth Date</label>
+                            <input type="date" class="form-control" id="birthDate" name="birthDate">
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="address" class="form-label">Address</label>
+                        <textarea class="form-control" id="address" name="address" rows="2" required></textarea>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="gender" class="form-label">Gender</label>
+                        <select class="form-select" id="gender" name="gender">
+                            <option value="M">Male</option>
+                            <option value="F">Female</option>
+                        </select>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="password" class="form-label">Password</label>
+                        <input type="password" class="form-control" id="password" name="password" required>
+                    </div>
+
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                        <button type="submit" class="btn btn-primary">Create Barista</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Bootstrap JS and dependencies -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/js/bootstrap.bundle.min.js"></script>
+
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+        // Set up the edit buttons
+        let editButtons = document.querySelectorAll(".edit-btn");
+        editButtons.forEach(button => {
+            button.addEventListener("click", function () {
+                let id = this.getAttribute("data-id");
+                let name = this.getAttribute("data-name");
+                let surname = this.getAttribute("data-surname");
+                let username = this.getAttribute("data-username");
+                let email = this.getAttribute("data-email");
+                let phone = this.getAttribute("data-phone");
+                let address = this.getAttribute("data-address");
+                let birthdate = this.getAttribute("data-birthdate");
+
+                // Fill form fields
+                document.getElementById("edit-id").value = id;
+                document.getElementById("edit-name").value = name;
+                document.getElementById("edit-surname").value = surname;
+                document.getElementById("edit-username").value = username;
+                document.getElementById("edit-email").value = email;
+                document.getElementById("edit-phone").value = phone;
+                document.getElementById("edit-address").value = address;
+                document.getElementById("edit-birthdate").value = birthdate;
+
+                // Clear password field
+                document.getElementById("edit-password").value = '';
+            });
+        });
+    });
+</script>
+</body>
+</html>

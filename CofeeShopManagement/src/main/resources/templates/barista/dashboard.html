@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Barista Dashboard</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/css/bootstrap.min.css">
+</head>
+<body>
+<div class="container mt-5">
+    <h1 class="mb-4">Barista Dashboard</h1>
+
+    <!-- Pending Orders -->
+    <h3>🟠 Pending Orders</h3>
+    <table class="table table-bordered">
+        <thead>
+        <tr>
+            <th>Order ID</th>
+            <th>Customer</th>
+            <th>Total Price</th>
+            <th>Status</th>
+            <th>Actions</th>
+        </tr>
+        </thead>
+        <tbody>
+        <tr th:each="order : ${pendingOrders}">
+            <td th:text="${order.id}"></td>
+            <td th:text="${order.customerName}"></td>
+            <td th:text="'$' + ${order.totalPrice}"></td>
+            <td class="text-warning" th:text="${order.status}"></td>
+            <td>
+                <form th:action="@{/barista/orders/{id}/complete(id=${order.id})}" method="post">
+                    <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}" />
+                    <button type="submit" class="btn btn-sm btn-success">Complete</button>
+                </form>
+            </td>
+        </tr>
+        </tbody>
+    </table>
+
+    <!-- Button to Open Order Modal -->
+    <button class="btn btn-primary mt-4" data-bs-toggle="modal" data-bs-target="#createOrderModal">➕ New Order</button>
+
+    <!-- Completed Orders -->
+    <h3 class="mt-5">✅ Completed Orders</h3>
+    <table class="table table-bordered">
+        <thead>
+        <tr>
+            <th>Order ID</th>
+            <th>Customer</th>
+            <th>Total Price</th>
+            <th>Status</th>
+        </tr>
+        </thead>
+        <tbody>
+        <tr th:each="order : ${completedOrders}">
+            <td th:text="${order.id}"></td>
+            <td th:text="${order.customerName}"></td>
+            <td th:text="'$' + ${order.totalPrice}"></td>
+            <td class="text-success" th:text="${order.status}"></td>
+        </tr>
+        </tbody>
+    </table>
+</div>
+
+<!-- Modal for Creating New Order -->
+<div class="modal fade" id="createOrderModal" tabindex="-1" aria-labelledby="createOrderModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <form th:action="@{/barista/orders/new}" method="post">
+                <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
+                <div class="modal-header">
+                    <h5 class="modal-title" id="createOrderModalLabel">Create New Order</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <!-- Customer Name -->
+                    <div class="mb-3">
+                        <label for="customerName" class="form-label">Customer Name</label>
+                        <input type="text" class="form-control" id="customerName" name="customerName" required>
+                    </div>
+
+                    <!-- Product List with quantity selectors -->
+                    <div id="product-list">
+                        <h5>Select Products</h5>
+                        <div class="row">
+                            <div th:each="product : ${products}" class="col-md-6 mb-4">
+                                <div class="card">
+                                    <img th:if="${product.imageUrl}" th:src="${product.imageUrl}" class="card-img-top" alt="Product Image">
+                                    <div class="card-body">
+                                        <h5 class="card-title" th:text="${product.name}"></h5>
+                                        <p class="card-text">Price: $<span th:text="${product.price}"></span></p>
+                                        <div class="mb-3">
+                                            <label class="form-label">Quantity</label>
+                                            <div class="input-group">
+                                                <button type="button" class="btn btn-outline-secondary" th:onclick="'decreaseQuantity(' + ${product.id} + ')'">-</button>
+                                                <input type="number" class="form-control text-center"
+                                                       th:id="'product-' + ${product.id}"
+                                                       th:name="'orderItems[' + ${product.id} + '].quantity'"
+                                                       value="0" min="0" th:max="${product.quantity}"
+                                                       th:data-price="${product.price}" th:data-id="${product.id}"
+                                                       onchange="updateTotalPrice()">
+                                                <button type="button" class="btn btn-outline-secondary" th:onclick="'increaseQuantity(' + ${product.id} + ')'">+</button>
+                                                <input type="hidden" th:name="'orderItems[' + ${product.id} + '].productId'" th:value="${product.id}">
+                                            </div>
+                                            <span class="product-total-price" th:id="'total-' + ${product.id}">$0.00</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Total Price Calculation -->
+                    <div class="mb-3 mt-4">
+                        <h4>Total Price: <span id="totalPrice" class="text-primary">$0.00</span></h4>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary" id="createOrderBtn" disabled>Create Order</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/js/bootstrap.bundle.min.js"></script>
+<script>
+    function increaseQuantity(productId) {
+        console.log("Increasing quantity for product:", productId);
+        const input = document.getElementById('product-' + productId);
+        const maxQuantity = parseInt(input.getAttribute('max'));
+        const currentValue = parseInt(input.value);
+
+        if (!isNaN(maxQuantity) && !isNaN(currentValue)) {
+            if (maxQuantity > 0 && currentValue < maxQuantity) {
+                input.value = currentValue + 1;
+            } else if (maxQuantity <= 0 || isNaN(maxQuantity)) {
+                input.value = currentValue + 1;
+            }
+        } else {
+            input.value = 1;
+        }
+
+        updateTotalPrice();
+    }
+
+    function decreaseQuantity(productId) {
+        console.log("Decreasing quantity for product:", productId);
+        const input = document.getElementById('product-' + productId);
+        const currentValue = parseInt(input.value);
+
+        if (!isNaN(currentValue) && currentValue > 0) {
+            input.value = currentValue - 1;
+        } else {
+            input.value = 0;
+        }
+
+        updateTotalPrice();
+    }
+
+    function updateTotalPrice() {
+        let totalPrice = 0;
+        let hasItems = false;
+
+        const inputs = document.querySelectorAll('input[type="number"]');
+        inputs.forEach(input => {
+            if (input.id.startsWith('product-')) {
+                const price = parseFloat(input.getAttribute('data-price'));
+                const quantity = parseInt(input.value);
+
+                if (quantity > 0) {
+                    hasItems = true;
+                }
+
+                if (!isNaN(price) && !isNaN(quantity)) {
+                    const itemTotal = price * quantity;
+                    totalPrice += itemTotal;
+
+                    const productId = input.getAttribute('data-id');
+                    const productTotal = document.getElementById("total-" + productId);
+                    if (productTotal) {
+                        productTotal.textContent = "$" + itemTotal.toFixed(2);
+                    }
+                }
+            }
+        });
+
+        document.getElementById("totalPrice").textContent = "$" + totalPrice.toFixed(2);
+
+        // Enable/disable create order button based on whether any items are selected
+        document.getElementById("createOrderBtn").disabled = !hasItems;
+    }
+
+    document.addEventListener("DOMContentLoaded", function() {
+        // Initialize all product totals
+        const inputs = document.querySelectorAll('input[type="number"]');
+        inputs.forEach(input => {
+            if (input.id.startsWith('product-')) {
+                const productId = input.getAttribute('data-id');
+                const productTotal = document.getElementById("total-" + productId);
+                if (productTotal) {
+                    productTotal.textContent = "$0.00";
+                }
+            }
+        });
+
+        updateTotalPrice();
+    });
+</script>
+</body>
+</html>
