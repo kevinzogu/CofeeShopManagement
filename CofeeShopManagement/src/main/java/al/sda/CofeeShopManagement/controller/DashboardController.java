@@ -53,7 +53,7 @@ public class DashboardController {
         if (role.get().equals("admin")) {
             return "redirect:/admin/dashboard";
         } else if (role.get().equals("barista")) {
-            return "redirect:/barista/dashboard";
+            return "redirect:/orders/dashboard";
         } else if (role.get().equals("manager")) {
             return "redirect:/manager/dashboard";
         }

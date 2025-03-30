@@ -20,7 +20,6 @@ import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 
 @Controller
 @RequestMapping("/manager")
@@ -118,22 +117,6 @@ public class ManagerController {
         return "redirect:/manager/users";
     }
     
-    
-
-   
-    /**
-     * Display products.html
-     */
-    @GetMapping("/products")
-    public String listProducts(Model model) {
-        List<Products> products = productRepository.findAll();
-        List<Category> categories = categoryRepository.findAll();
-        
-        model.addAttribute("products", products);
-        model.addAttribute("categories", categories);
-        return "manager/products";
-    }
-    
     /**
      * Create a new product
      */
@@ -142,7 +125,7 @@ public class ManagerController {
         productRepository.save(product);
         redirectAttributes.addFlashAttribute("successMessage",
                 "Product " + product.getName() + " created successfully");
-        return "redirect:/manager/products";
+        return "redirect:/manager/menu";
     }
     
     /**
@@ -154,7 +137,7 @@ public class ManagerController {
         productRepository.save(product);
         redirectAttributes.addFlashAttribute("successMessage",
                 "Product updated successfully");
-        return "redirect:/manager/products";
+        return "redirect:/manager/menu";
     }
     
     /**
@@ -164,17 +147,19 @@ public class ManagerController {
     public String deleteProduct(@PathVariable Long id, RedirectAttributes redirectAttributes) {
         productRepository.deleteById(id);
         redirectAttributes.addFlashAttribute("successMessage", "Product deleted successfully");
-        return "redirect:/manager/products";
+        return "redirect:/manager/menu";
     }
     
     /**
-     * Display categories
+     * Display menu
      */
-    @GetMapping("/categories")
-    public String listCategories(Model model) {
+    @GetMapping("/menu")
+    public String listMenu(Model model) {
+        List<Products> products = productRepository.findAll();
         List<Category> categories = categoryRepository.findAll();
+        model.addAttribute("products", products);
         model.addAttribute("categories", categories);
-        return "manager/categories";
+        return "manager/menu";
     }
     
     /**
@@ -185,7 +170,7 @@ public class ManagerController {
         categoryRepository.save(category);
         redirectAttributes.addFlashAttribute("successMessage",
                 "Category " + category.getName() + " created successfully");
-        return "redirect:/manager/categories";
+        return "redirect:/manager/menu";
     }
     
     /**
@@ -200,7 +185,7 @@ public class ManagerController {
         
         redirectAttributes.addFlashAttribute("successMessage",
                 "Category updated successfully");
-        return "redirect:/manager/categories";
+        return "redirect:/manager/menu";
     }
     
     
@@ -214,13 +199,13 @@ public class ManagerController {
         
         if (productsWithCategory > 0) {
             redirectAttributes.addFlashAttribute("errorMessage",
-                    "Cannot delete category. It is used by " + productsWithCategory + " products.html.");
+                    "Cannot delete category. It is used by " + productsWithCategory + " products.");
         } else {
             categoryRepository.deleteById(id);
             redirectAttributes.addFlashAttribute("successMessage", "Category deleted successfully");
         }
         
-        return "redirect:/manager/categories";
+        return "redirect:/manager/menu";
     }
     
     /**

@@ -38,6 +38,19 @@ public class OrderService {
         return orderRepository.findByStatus("Completed");
     }
     
+    public List<Orders> getCanceledOrders() {
+        return orderRepository.findByStatus("CANCELLED");
+    }
+    
+    public List<Orders> getPreparingOrders() {
+        return orderRepository.findByStatus("Preparing");
+    }
+    
+    // ✅ Get Completed Orders
+    public List<Orders> getReadyOrders() {
+        return orderRepository.findByStatus("READY");
+    }
+    
     // ✅ Mark an Order as Completed
     public void completeOrder(Long orderId) {
         Orders order = orderRepository.findById(orderId).orElseThrow(() -> new RuntimeException("Order not found"));
@@ -124,4 +137,5 @@ public class OrderService {
     public void save(Orders order) {
         orderRepository.save(order);
     }
+
 }

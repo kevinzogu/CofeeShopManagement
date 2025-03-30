@@ -1,8 +1,17 @@
 package al.sda.CofeeShopManagement.controller;
 
+import al.sda.CofeeShopManagement.dto.OrderCreationDTO;
+import al.sda.CofeeShopManagement.entity.OrderItem;
 import al.sda.CofeeShopManagement.entity.Orders;
+import al.sda.CofeeShopManagement.entity.Products;
+import al.sda.CofeeShopManagement.entity.User;
+import al.sda.CofeeShopManagement.enums.Roles;
 import al.sda.CofeeShopManagement.service.OrderService;
+import al.sda.CofeeShopManagement.service.ProductService;
+import al.sda.CofeeShopManagement.service.UserService;
 import org.springframework.format.annotation.DateTimeFormat;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
@@ -11,7 +20,9 @@ import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 @Controller
@@ -19,40 +30,41 @@ import java.util.Optional;
 public class OrderController {
     
     private final OrderService orderService;
+    private final UserService userService;
+    private final ProductService productService;
     
-    public OrderController(OrderService orderService) {
+    public OrderController(OrderService orderService, UserService userService, ProductService productService) {
         this.orderService = orderService;
+        this.userService = userService;
+        this.productService = productService;
     }
     
-    @GetMapping("/list")
-    public String listOrders(
-            @RequestParam(required = false) String status,
-            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate fromDate,
-            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate toDate,
-            Model model) {
+    @GetMapping("/dashboard")
+    public String showDashboard(Model model) {
+        model.addAttribute("pendingOrders", orderService.getPendingOrders());
+        model.addAttribute("preparingOrders",orderService.getPreparingOrders());
+        model.addAttribute("readyOrders",orderService.getReadyOrders());
+        model.addAttribute("completedOrders", orderService.getCompletedOrders());
+        model.addAttribute("canceledOrders",orderService.getCanceledOrders());
+        model.addAttribute("products", productService.getAllProducts());
         
-        List<Orders> orders;
-        
-        // Filter orders based on parameters
-        if (status != null && !status.isEmpty()) {
-            if (fromDate != null && toDate != null) {
-                orders = orderService.findByStatusAndCreatedAtBetween(
-                        status,
-                        LocalDateTime.of(fromDate, LocalTime.MIN),
-                        LocalDateTime.of(toDate, LocalTime.MAX));
-            } else {
-                orders = orderService.findByStatus(status);
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        User currentUser = null;
+        if (authentication != null && authentication.isAuthenticated()) {
+            Object principal = authentication.getPrincipal();
+            
+            if (principal instanceof org.springframework.security.core.userdetails.User) {
+                org.springframework.security.core.userdetails.User user = (org.springframework.security.core.userdetails.User) principal;
+                
+                String role = user.getAuthorities().iterator().next().getAuthority();
+                
+                String userRole = role.equals(Roles.MANAGER.getRoleName()) ? "manager" : "bartender";
+                
+                model.addAttribute("userRole", userRole);
             }
-        } else if (fromDate != null && toDate != null) {
-            orders = orderService.findByCreatedAtBetween(
-                    LocalDateTime.of(fromDate, LocalTime.MIN),
-                    LocalDateTime.of(toDate, LocalTime.MAX));
-        } else {
-            orders = orderService.findAll();
         }
-        
-        model.addAttribute("orders", orders);
-        return "orders/list";
+
+        return "orders/dashboard";
     }
     
     /**
@@ -96,6 +108,71 @@ public class OrderController {
         }
         
         return "redirect:/orders/view/" + id;
+    }
+    
+    // Process the order creation
+    @PostMapping("/create/new")
+    public String createOrder(@ModelAttribute OrderCreationDTO orderDTO) {
+        // Create a new order
+        Orders newOrder = new Orders();
+        newOrder.setCustomerName(orderDTO.getCustomerName());
+        newOrder.setStatus("PENDING");
+        newOrder.setOrderDate(LocalDate.now().toString());
+        newOrder.setCreatedAt(LocalDateTime.now());
+        newOrder.setUpdatedAt(LocalDateTime.now());
+        
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        User currentUser = null;
+        if (authentication != null && authentication.isAuthenticated()) {
+            org.springframework.security.core.userdetails.User user = (org.springframework.security.core.userdetails.User) authentication.getPrincipal();
+            String username = user.getUsername();
+            
+            currentUser = userService.findByUsername(username);
+        }
+        
+        newOrder.setUser(currentUser);
+        
+        // Calculate total quantity and price
+        int totalQuantity = 0;
+        double totalPrice = 0.0;
+        
+        // Create order items
+        List<OrderItem> items = new ArrayList<>();
+        
+        for (Map.Entry<Long, OrderCreationDTO.OrderItemDTO> entry : orderDTO.getOrderItems().entrySet()) {
+            OrderCreationDTO.OrderItemDTO itemDTO = entry.getValue();
+            
+            // Skip items with quantity 0
+            if (itemDTO.getQuantity() <= 0) {
+                continue;
+            }
+            
+            // Get product from database
+            Products product = productService.getProductById(itemDTO.getProductId());
+            
+            // Create order item
+            OrderItem item = new OrderItem();
+            item.setOrder(newOrder);
+            item.setProductId(product);
+            item.setQuantity(itemDTO.getQuantity());
+            item.setPrice(product.getPrice());
+            
+            items.add(item);
+            
+            // Update totals
+            totalQuantity += itemDTO.getQuantity();
+            totalPrice += product.getPrice() * itemDTO.getQuantity();
+        }
+        
+        // Set remaining order fields
+        newOrder.setQuantity(totalQuantity);
+        newOrder.setTotalPrice(totalPrice);
+        newOrder.setOrderItems(items);
+        
+        // Save order
+        orderService.saveOrder(newOrder);
+        
+        return "redirect:/orders/dashboard";
     }
     
 }
