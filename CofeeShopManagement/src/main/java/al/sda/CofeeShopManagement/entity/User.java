@@ -35,8 +35,8 @@ public class User {
     @ElementCollection(fetch = FetchType.EAGER)
     private List<String> roles = new ArrayList<>();
     
-    @Column
-    private boolean enabled = true;
+    @Column(name = "status")
+    private boolean status = true;
     
     @Column
     private Boolean isLogged = false;
@@ -49,12 +49,12 @@ public class User {
         isLogged = loggedIn;
     }
     
-    public boolean isEnabled() {
-        return enabled;
+    public boolean getStatus() {
+        return status;
     }
     
-    public void setEnabled(boolean enabled) {
-        this.enabled = enabled;
+    public void setStatus(boolean status) {
+        this.status = status;
     }
     
     @CreationTimestamp
@@ -196,7 +196,7 @@ public class User {
                 ", birthDate='" + birthDate + '\'' +
                 ", roles=" + roles +
                 ", isLogged=" + isLogged +
-                ", enabled=" + enabled +
+                ", status=" + status +
                 ", createdAt=" + createdAt +
                 ", updatedAt=" + updatedAt +
                 ", lastLogin=" + lastLogin +

@@ -81,9 +81,18 @@ public class ManagerController {
     @GetMapping("/users")
     public String listUsers(Model model) {
         List<User> users = userRepository.findAll();
-        model.addAttribute("baristas", users.stream()
-                .filter(user -> user.getRoles().stream().anyMatch(role -> role.equals(Roles.BARISTA.getRoleName())))
+        System.out.println("users = " + users);
+        
+        model.addAttribute("activeBaristas",
+                users.stream().filter(user -> user.getRoles().stream().
+                                anyMatch(role -> role.equals(Roles.BARISTA.getRoleName())
+                                && user.getStatus()))
                 .toList());
+        model.addAttribute("inactiveBaristas",
+                users.stream().filter(user -> user.getRoles().stream().
+                                anyMatch(role -> role.equals(Roles.BARISTA.getRoleName())
+                                        && !user.getStatus()))
+                        .toList());
         return "manager/users";
     }
     

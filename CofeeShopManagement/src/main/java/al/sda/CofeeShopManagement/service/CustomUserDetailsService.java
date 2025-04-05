@@ -32,13 +32,13 @@ public class CustomUserDetailsService implements UserDetailsService {
     @Override
     public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
         dbg("loadUserByUsername with username: " + username);
-        User user = userRepository.findByUsername(username)
-                .orElseThrow(() -> new UsernameNotFoundException("User not found"));
+        User user = userRepository.findByUsernameAndStatus(username,true).orElse(null);
         
-//        dbg("User found: " + user);
-//        user.setLoggedIn(true);
-//        userRepository.save(user);
-        
+        if (user == null) {
+            dbg("User not found or Inactive: " + username);
+            throw new UsernameNotFoundException("User not found: " + username);
+        }
+   
         List<GrantedAuthority> authorities = user.getRoles().stream()
                 .map(SimpleGrantedAuthority::new)
                 .collect(Collectors.toList());

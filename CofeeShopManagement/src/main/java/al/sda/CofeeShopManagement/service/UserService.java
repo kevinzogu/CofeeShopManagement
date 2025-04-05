@@ -65,6 +65,7 @@ public class UserService {
             dbg("Setting roles : " + user.getRoles());
             userFromDB.setRoles(new ArrayList<>(user.getRoles()));
             userFromDB.setLastLogin(LocalDateTime.now());
+            userFromDB.setStatus(user.getStatus());
             userRepository.save(userFromDB);
         }
         

@@ -455,11 +455,10 @@
                         <select class="form-select" id="product-category" name="category.id" required>
                             <option value="">Select a category</option>
                             <option th:each="category : ${categories}" th:value="${category.id}" th:text="${category.name}">Hot Coffee</option>
-                            <option value="2">Cold Drinks</option>
-                            <option value="3">Pastries</option>
                         </select>
                     </div>
 
+                    <div class="mb-3">
                     <div class="mb-3">
                         <label for="product-imageUrl" class="form-label">Image URL</label>
                         <input type="text" class="form-control" id="product-imageUrl" name="imageUrl" required placeholder="https://example.com/coffee.jpg">
